@@ -1,65 +1,170 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  
+  const [kols, setKols] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [selectedKol, setSelectedKol] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(
+      "https://gist.githubusercontent.com/Sandeepsorout01/4fef48fa4ddaa7551ad9fdeb5a0087e1/raw/kols.json"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setKols(data);
+        setLoading(false);
+      });
+  }, []);
+
+  const filteredKols = kols.filter((kol) =>
+    kol.handle.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      Loading...
     </div>
+  );
+}
+
+  return (
+    <main className="min-h-screen bg-zinc-950 text-white">
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold">
+              KOL Audit Dashboard
+            </h1>
+
+            <p className="text-zinc-400 mt-2">
+              Track influencer performance and signal history
+            </p>
+
+            <div className="mt-4 space-y-1">
+              <p>Total KOLs: {filteredKols.length}</p>
+              <p>
+                Last Updated: {new Date().toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 md:mt-0 px-4 py-2 bg-white text-black rounded-lg"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search KOL handle..."
+          className="w-full max-w-md px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white mb-6"
+        />
+
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={() =>
+              setKols([...kols].sort((a, b) => b.accuracy_pct - a.accuracy_pct))
+            }
+            className="px-4 py-2 bg-zinc-800 rounded"
+          >
+            Accuracy
+          </button>
+
+          <button
+            onClick={() =>
+              setKols([...kols].sort((a, b) => b.avg_roi_pct - a.avg_roi_pct))
+            }
+            className="px-4 py-2 bg-zinc-800 rounded"
+          >
+            ROI
+          </button>
+
+          <button
+            onClick={() =>
+              setKols([...kols].sort((a, b) => b.total_signals - a.total_signals))
+            }
+            className="px-4 py-2 bg-zinc-800 rounded"
+          >
+            Signals
+          </button>
+        </div>
+
+
+        {filteredKols.length === 0 && (
+          <div className="text-center py-10">
+            <h2 className="text-xl font-semibold">
+              No KOLs Found
+            </h2>
+          </div>
+        )}
+        {filteredKols.slice(0, 50).map((kol, index) => (
+          <div
+            key={kol.id}
+            className="border-b border-zinc-800 py-4 flex justify-between items-center"
+          >
+            <div className=" text-zinc-400 font-bold">
+               #{index + 1}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <img
+                src={kol.avatar}
+                alt={kol.handle}
+                className="w-12 h-12 rounded-full"
+              />
+
+              <div>
+                <p className="font-semibold">{kol.handle}</p>
+                <p className="text-sm text-zinc-400">{kol.name}</p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <p>Accuracy: {kol.accuracy_pct}%</p>
+              <p>ROI: {kol.avg_roi_pct}%</p>
+              <p>Signals: {kol.total_signals}</p>
+
+              <button
+                onClick={() => setSelectedKol(kol)}
+                className="mt-2 px-3 py-1 bg-blue-600 rounded"
+              >
+                View Signals
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {selectedKol && (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl w-[500px]">
+          <h2 className="text-2xl font-bold mb-4">
+            {selectedKol.handle}
+          </h2>
+
+          <div className="space-y-2">
+            <p>Name: {selectedKol.name}</p>
+            <p>Accuracy: {selectedKol.accuracy_pct}%</p>
+            <p>ROI: {selectedKol.avg_roi_pct}%</p>
+            <p>Total Signals: {selectedKol.total_signals}</p>
+          </div>
+
+          <button
+            onClick={() => setSelectedKol(null)}
+            className="mt-6 px-4 py-2 bg-red-600 rounded"
+          >
+            Close
+          </button>
+        </div>
+    </div>
+    )}
+  </main>
   );
 }
