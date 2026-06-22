@@ -144,7 +144,7 @@ export default function Home() {
       </div>
       {selectedKol && (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl w-[500px]">
+        <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl ">
           <h2 className="text-2xl font-bold mb-4">
             {selectedKol.handle}
           </h2>
