@@ -7,27 +7,66 @@ export default function Home() {
   const [kols, setKols] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [minAccuracy, setMinAccuracy] = useState(0);
+  const [error, setError] = useState("");
+  const [signals, setSignals] = useState<any[]>([]);
   const [selectedKol, setSelectedKol] = useState<any>(null);
 
   useEffect(() => {
-    fetch(
-      "https://gist.githubusercontent.com/Sandeepsorout01/4fef48fa4ddaa7551ad9fdeb5a0087e1/raw/kols.json"
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setKols(data);
-        setLoading(false);
-      });
-  }, []);
+  fetch(
+    "https://gist.githubusercontent.com/Sandeepsorout01/4fef48fa4ddaa7551ad9fdeb5a0087e1/raw/kols.json"
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setKols(data);
+      setLoading(false);
+    })
+    .catch(() => {
+      setError("Failed to load data");
+      setLoading(false);
+    });
 
-  const filteredKols = kols.filter((kol) =>
-    kol.handle.toLowerCase().includes(search.toLowerCase())
+  fetch(
+    "https://gist.githubusercontent.com/Sandeepsorout01/4fef48fa4ddaa7551ad9fdeb5a0087e1/raw/signals.json"
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setSignals(data);
+    });
+
+}, []);
+
+  const filteredKols = kols.filter(
+  (kol) =>
+    kol.handle.toLowerCase().includes(search.toLowerCase()) &&
+    kol.accuracy_pct >= minAccuracy
   );
+
+  const kolSignals = selectedKol
+  ? signals.filter(
+      (signal) => signal.kol_id === selectedKol.id
+    )
+  : [];
 
   if (loading) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
       Loading...
+    </div>
+  );
+}
+
+if (error) {
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center gap-4">
+      <p>{error}</p>
+
+      <button
+        onClick={() => window.location.reload()}
+        className="px-4 py-2 bg-red-600 rounded"
+      >
+        Retry
+      </button>
     </div>
   );
 }
@@ -67,6 +106,16 @@ export default function Home() {
           placeholder="Search KOL handle..."
           className="w-full max-w-md px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white mb-6"
         />
+
+        <div className="my-4">
+          <input
+            type="number"
+            placeholder="Minimum Accuracy %"
+            value={minAccuracy}
+            onChange={(e) => setMinAccuracy(Number(e.target.value))}
+            className="w-full max-w-md px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white"
+          />
+        </div>
 
         <div className="flex gap-3 mb-6">
           <button
@@ -143,28 +192,49 @@ export default function Home() {
         ))}
       </div>
       {selectedKol && (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl ">
-          <h2 className="text-2xl font-bold mb-4">
-            {selectedKol.handle}
-          </h2>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-xl w-[600px] max-h-[80vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-4">
+          {selectedKol.handle}
+        </h2>
 
-          <div className="space-y-2">
-            <p>Name: {selectedKol.name}</p>
-            <p>Accuracy: {selectedKol.accuracy_pct}%</p>
-            <p>ROI: {selectedKol.avg_roi_pct}%</p>
-            <p>Total Signals: {selectedKol.total_signals}</p>
-          </div>
-
-          <button
-            onClick={() => setSelectedKol(null)}
-            className="mt-6 px-4 py-2 bg-red-600 rounded"
-          >
-            Close
-          </button>
+        <div className="space-y-2">
+          <p>Name: {selectedKol.name}</p>
+          <p>Accuracy: {selectedKol.accuracy_pct}%</p>
+          <p>ROI: {selectedKol.avg_roi_pct}%</p>
+          <p>Total Signals: {selectedKol.total_signals}</p>
         </div>
-    </div>
-    )}
+
+        <div className="mt-6">
+          <h3 className="font-bold mb-3">
+            Recent Signals ({kolSignals.length})
+          </h3>
+
+          {kolSignals.slice(0, 10).map((signal, index) => (
+            <div
+              key={signal.id}
+              className="border-b border-zinc-700 py-3"
+            >
+              <p>Symbol: {signal.symbol}</p>
+              <p>Direction: {signal.direction}</p>
+              <p>Status: {signal.status}</p>
+              <p>Entry: {signal.entry_price}</p>
+              <p>Target: {signal.target_price}</p>
+              <p>SL: {signal.stop_loss}</p>
+              <p>ROI: {signal.roi_pct}%</p>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setSelectedKol(null)}
+          className="mt-6 px-4 py-2 bg-red-600 rounded"
+        >
+          Close
+        </button>
+        </div>
+      </div>
+  )}
   </main>
   );
 }
